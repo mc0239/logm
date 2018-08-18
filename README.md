@@ -10,33 +10,60 @@ Logm is a fairly simple logger that supports log levels and colored output (insp
 go get github.com/mc0239/logm
 ```
 
-Import logm package and make an instance of logm.Logm:
+Make a new logger:
 
 ```go
-// import package
-import "github.com/mc0239/logm"
+// making a logger with prefix
+logger := logm.New("my-logger")
 
-// make an instance
-lgr := logm.New("my-logger")
+// making a logger with prefix and custom output (pass io.Writer)
+logger := logm.NewWithOutput(os.Stdout, "my-logger")
 ```
 
-Start using logm!
+Log a message:
 
 ```go
-lgr.LogV("A verbose log message")
-lgr.LogI("Some info")
-lgr.LogW("Hold up! It's a warning")
-lgr.LogE("Something has gone wrong")
-lgr.Log("WHAT", "Custom log level")
+logger.Verbose("Verbose message")
+    
+logger.Info("Informational message")
+logger.Log(logm.LvlOk, "You should know it all went well")
+    
+logger.Log(logm.LvlNotice, "Notice this")
+logger.Warning("Warrrrr arrrning")
+    
+logger.Error("Oh-ho an error over here")
+logger.Log(logm.LvlPanic, "This is the end")
+
+// you can specify any int as a log level
+logger.Log(41, "Some higher log level")
 ```
 
-## Example
+Disable logging up to a certain level:
 
-![logm example](logmsample.png)
+```go
+// only log Warnings and more important logs
+logger.LogLevel = logm.LvlWarning 
+
+// only log logs with level >= 41
+logger.LogLevel = 41
+```
+
+Disable colored output:
+
+```go
+logger.DisableColor = true
+```
+
+## Example outputs
+
+![logm-whiteonblack](img/whiteonblack.png)
+![logm-breeze](img/breeze.png)
+![logm-solarized](img/solarized.png)
+![logm-monokai](img/monokai.png)
 
 ## Customizing
 
-Logm is a one file, about 100 lines, package. You can copy it into your project and customize the logger as you please :)
+Logm is a one file, about 140 lines, package. You can copy it into your project and customize the logger as you please :)
 
 ## License
 

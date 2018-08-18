@@ -1,101 +1,142 @@
 package logm
 
 import (
+	"fmt"
+	"io"
 	golog "log"
-	"time"
+	"os"
 )
 
 var (
-	blue   = string([]byte{27, 91, 57, 55, 59, 52, 52, 109}) // INF
-	yellow = string([]byte{27, 91, 57, 55, 59, 52, 51, 109}) // WRN
-	red    = string([]byte{27, 91, 57, 55, 59, 52, 49, 109}) // ERR
-	cyan   = string([]byte{27, 91, 57, 55, 59, 52, 54, 109}) // ???
-	reset  = string([]byte{27, 91, 48, 109})
+	colReset   = string([]byte{27, 91, 48, 109})
+	colBlue    = string([]byte{27, 91, 57, 55, 59, 52, 52, 109}) // LvlInfo
+	colGreen   = string([]byte{27, 91, 57, 55, 59, 52, 50, 109}) // LvlOk
+	colCyan    = string([]byte{27, 91, 57, 55, 59, 52, 54, 109}) // LvlNotice
+	colYellow  = string([]byte{27, 91, 57, 55, 59, 52, 51, 109}) // LvlWarning
+	colRed     = string([]byte{27, 91, 57, 55, 59, 52, 49, 109}) // LvlError
+	colMagenta = string([]byte{27, 91, 57, 55, 59, 52, 53, 109}) // LvlPanic
+	colWhite   = string([]byte{27, 91, 57, 48, 59, 52, 55, 109}) // LvlHigh
+)
+
+// Log Level constants used for log-level filtering and coloring
+const (
+	LvlVerbose = 0
+	LvlInfo    = 1
+	LvlOk      = 2
+	LvlNotice  = 3
+	LvlWarning = 4
+	LvlError   = 5
+	LvlPanic   = 6
+
+	LvlMute = 100
 )
 
 // Logm is an instance of the logger
 type Logm struct {
+	logger    *golog.Logger
+	logPrefix string
+
 	// DisableColor specifies if log output in console should use colors
 	DisableColor bool // = false
-	// LogLevel specifies what logs should be output. Level 0 enables all output, level 1 disables VRB
-	// output, level 2 disables VRN and INF, and so on... Level 4 will disable all known output types
-	// (VRB, INF, WAR, ERR), and level 5 or higher will disable all output (including output with
-	// custom log type).
-	LogLevel  int // = 0
-	logPrefix string
+
+	/*
+		Log level to be output. Verbose level (0) enables all, info level (1) enables info and more
+		important, warning level (2) enables warning, error and higher level, etc.
+	*/
+	LogLevel int
 }
 
 // New instantiates a new logger with a given log prefix
 func New(logPrefix string) Logm {
 	return Logm{
+		logger:    golog.New(os.Stderr, "", golog.LstdFlags),
 		logPrefix: logPrefix,
 	}
 }
 
-// LogV logs a verbose message
-func (l Logm) LogV(logMessage string) {
-	if l.LogLevel <= 0 {
-		l.Log("VRB", logMessage)
+// NewWithOutput instantiates a new logger with a given output writer and log prefix
+func NewWithOutput(out io.Writer, logPrefix string) Logm {
+	return Logm{
+		logger:    golog.New(out, "", golog.LstdFlags),
+		logPrefix: logPrefix,
 	}
 }
 
-// LogI logs an info message
-func (l Logm) LogI(logMessage string) {
-	if l.LogLevel <= 1 {
-		l.Log("INF", logMessage)
-	}
+// Verbose logs a verbose message
+func (l Logm) Verbose(message string) {
+	l.Log(LvlVerbose, message)
 }
 
-// LogW logs a warning message
-func (l Logm) LogW(logMessage string) {
-	if l.LogLevel <= 2 {
-		l.Log("WRN", logMessage)
-	}
+// Info logs an info message
+func (l Logm) Info(message string) {
+	l.Log(LvlInfo, message)
 }
 
-// LogE logs an error message
-func (l Logm) LogE(logMessage string) {
-	if l.LogLevel <= 3 {
-		l.Log("ERR", logMessage)
-	}
+// Warning logs a warning message
+func (l Logm) Warning(message string) {
+	l.Log(LvlWarning, message)
 }
 
-// Log logs a message with custom log level
-func (l Logm) Log(logLevel string, logMessage string) {
+// Error logs an error message
+func (l Logm) Error(message string) {
+	l.Log(LvlError, message)
+}
 
-	var color string
-	if !l.DisableColor {
-		switch logLevel {
-		case "VRB":
-			color = reset
-			break
-		case "INF":
-			color = blue
-			break
-		case "WRN":
-			color = yellow
-			break
-		case "ERR":
-			color = red
-			break
-		default:
-			color = cyan
-		}
-	} else {
-		color = reset
-	}
+// Log logs a message with given log level. Loglevel should be one of the Lvl* constants from this
+// package.
+func (l Logm) Log(logLevel int, logMessage string) {
 
-	if len(logLevel) > 3 {
-		logLevel = logLevel[:3]
-	}
+	color, text := l.getProps(logLevel)
 
-	if l.LogLevel <= 4 {
-		golog.Printf("[%s] %v |%s %s %s| %s\n",
+	if l.LogLevel <= logLevel {
+		l.logger.Printf("[%s] |%s %s %s| %s\n",
 			l.logPrefix,
-			time.Now().Format("2006/01/02 15:04:05"),
-			color, logLevel, reset,
+			color, text, colReset,
 			logMessage,
 		)
 	}
 
+}
+
+func (l Logm) getProps(lvl int) (color string, text string) {
+
+	switch lvl {
+	case LvlVerbose:
+		color = colReset
+		text = "VERBOSE"
+		break
+	case LvlInfo:
+		color = colBlue
+		text = "INFO   "
+		break
+	case LvlOk:
+		color = colGreen
+		text = "OK     "
+		break
+	case LvlNotice:
+		color = colCyan
+		text = "NOTICE "
+		break
+	case LvlWarning:
+		color = colYellow
+		text = "WARNING"
+		break
+	case LvlError:
+		color = colRed
+		text = "ERROR  "
+		break
+	case LvlPanic:
+		color = colMagenta
+		text = "PANIC  "
+		break
+	default:
+		color = colWhite
+		text = fmt.Sprintf("!%2d    ", lvl)
+	}
+
+	if l.DisableColor {
+		color = colReset
+	}
+
+	return color, text
 }
