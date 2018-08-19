@@ -64,22 +64,22 @@ func NewWithOutput(out io.Writer, logPrefix string) Logm {
 
 // Verbose logs a verbose message
 func (l Logm) Verbose(message string, args ...interface{}) {
-	l.Log(LvlVerbose, message, args)
+	l.Log(LvlVerbose, message, args...)
 }
 
 // Info logs an info message
 func (l Logm) Info(message string, args ...interface{}) {
-	l.Log(LvlInfo, message, args)
+	l.Log(LvlInfo, message, args...)
 }
 
 // Warning logs a warning message
 func (l Logm) Warning(message string, args ...interface{}) {
-	l.Log(LvlWarning, message, args)
+	l.Log(LvlWarning, message, args...)
 }
 
 // Error logs an error message
 func (l Logm) Error(message string, args ...interface{}) {
-	l.Log(LvlError, message, args)
+	l.Log(LvlError, message, args...)
 }
 
 // Log logs a message with given log level. Loglevel should be one of the Lvl* constants from this
@@ -92,7 +92,7 @@ func (l Logm) Log(logLevel int, logMessage string, logArgs ...interface{}) {
 		l.logger.Printf("[%s] |%s %s %s| %s\n",
 			l.logPrefix,
 			color, text, colReset,
-			fmt.Sprintf(logMessage, logArgs),
+			fmt.Sprintf(logMessage, logArgs...),
 		)
 	}
 
