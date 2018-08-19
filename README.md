@@ -36,6 +36,9 @@ logger.Log(logm.LvlPanic, "This is the end")
 
 // you can specify any int as a log level
 logger.Log(41, "Some higher log level")
+
+// as of version 0.2.0, you can pass format string with arguments as well
+logger.Info("Formatting an int: %d", 41)
 ```
 
 Disable logging up to a certain level:
